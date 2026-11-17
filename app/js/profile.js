@@ -1,7 +1,8 @@
 // An account's public profile (#/u/<handle>): who they are, their record,
-// their entries and their payouts — one API request for the whole page.
-// Avatars are hosted on make.fun and send Cross-Origin-Resource-Policy:
-// same-origin, so the <img> carries crossorigin="anonymous".
+// their entries grouped by outcome and their payouts as a table with a
+// running total — one API request for the whole page. Avatars are hosted
+// on make.fun and send Cross-Origin-Resource-Policy: same-origin, so the
+// <img> carries crossorigin="anonymous".
 
 import { getProfile, absUrl } from './api.js';
 import { esc, fmtUSD, fmtNum, fmtDate, microRate, shortAddr } from './format.js';
@@ -12,29 +13,57 @@ function scoreText(score) {
   return score.display ?? String(score.value ?? '');
 }
 
+// One entry of the account: the bounty it entered (linked), the entry's own
+// title, its outcome — a placed pill where it placed, what it won, its
+// score — and a link straight to that bounty's leaderboard.
 function entryRow(sol) {
   const comp = sol.competition || {};
   const bits = [];
-  if (sol.placement) bits.push(`Placed #${sol.placement}`);
   if (sol.prize_usd) bits.push(`won ${fmtUSD(sol.prize_usd)}`);
   const score = scoreText(sol.score);
   if (score) bits.push(`${sol.score.column?.title || 'Score'} ${score}`);
   bits.push(`entered ${fmtDate(sol.entered_at)}`);
   return `<li class="entry-row">
-    <div><a href="#/bounty/${esc(comp.slug)}">${esc(comp.title || comp.slug || 'Bounty')}</a></div>
+    <div class="entry-main">
+      <a href="#/bounty/${esc(comp.slug)}">${esc(comp.title || comp.slug || 'Bounty')}</a>
+      ${sol.placement ? `<span class="placed-pill">🏆 placed #${esc(sol.placement)}</span>` : ''}
+    </div>
     <div class="entry-title">${esc(sol.title || '')}</div>
-    <div class="muted">${esc(bits.join(' · '))}</div>
+    <div class="muted">${esc(bits.join(' · '))} · <a href="#/bounty/${esc(comp.slug)}/leaderboard">leaderboard</a></div>
   </li>`;
 }
 
-function payoutRow(p) {
-  const amount = p.amount_usd ?? p.prize_usd ?? p.amount;
-  const when = p.paid_at ?? p.created_at ?? p.at;
-  const comp = p.competition?.title ?? p.competition_slug ?? p.competition ?? '';
-  return `<li class="entry-row">
-    <div><strong>${esc(fmtUSD(amount))}</strong>${comp ? ` — ${esc(comp)}` : ''}</div>
-    <div class="muted">${esc(fmtDate(when))}</div>
-  </li>`;
+function payoutAmount(p) {
+  return Number(p.amount_usd ?? p.prize_usd ?? p.amount) || 0;
+}
+
+// The payouts as one table, oldest first so the running total climbs the
+// way the money arrived: each row names the bounty, the date and the
+// amount, and the last column is everything earned up to that row. The
+// final running total is the account's earnings from its payouts alone.
+function payoutsTableHtml(payouts) {
+  const rows = [...payouts].sort((a, b) => payoutTime(a) - payoutTime(b));
+  let running = 0;
+  const body = rows.map((p) => {
+    running += payoutAmount(p);
+    const comp = p.competition?.title ?? p.competition_slug ?? p.competition ?? '';
+    const when = p.paid_at ?? p.created_at ?? p.at;
+    return `<tr>
+      <td>${comp ? esc(comp) : '<span class="muted">—</span>'}</td>
+      <td class="num">${esc(fmtDate(when))}</td>
+      <td class="num"><strong>${esc(fmtUSD(payoutAmount(p)))}</strong></td>
+      <td class="num">${esc(fmtUSD(running))}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="table-wrap"><table class="data">
+    <thead><tr><th>Bounty</th><th>Paid</th><th>Amount</th><th>Running total</th></tr></thead>
+    <tbody>${body}</tbody>
+  </table></div>`;
+}
+
+function payoutTime(p) {
+  const t = new Date(p.paid_at ?? p.created_at ?? p.at ?? '').getTime();
+  return Number.isFinite(t) ? t : 0;
 }
 
 // The totals strip: the account at a glance. Entries submitted counts the
@@ -45,7 +74,7 @@ function profileTotals(p) {
   const solutions = Array.isArray(p.solutions) ? p.solutions : [];
   const payouts = Array.isArray(p.payouts) ? p.payouts : [];
   const finished = solutions.filter((s) => (s.competition?.status || '') !== 'open').length;
-  const paidOut = payouts.reduce((sum, x) => sum + (Number(x.amount_usd ?? x.prize_usd ?? x.amount) || 0), 0);
+  const paidOut = payouts.reduce((sum, x) => sum + payoutAmount(x), 0);
   return {
     entriesSubmitted: solutions.length,
     competitionsEntered: p.record?.competitions_entered,
@@ -130,7 +159,7 @@ export async function renderProfile(app, handle) {
     </section>
     ${Array.isArray(p.payouts) && p.payouts.length ? `<section class="panel">
       <h2>Payouts</h2>
-      <ul class="plain">${p.payouts.map(payoutRow).join('')}</ul>
+      ${payoutsTableHtml(p.payouts)}
     </section>` : ''}
   </section>`;
   return null;

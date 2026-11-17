@@ -53,10 +53,11 @@ async function route() {
 window.addEventListener('hashchange', route);
 route();
 
-// Pressing "/" anywhere jumps to the board search: on the board it focuses
-// the filter at once; elsewhere it goes to the board first, then focuses.
+// Pressing "/" anywhere jumps to the current view's search: the board's
+// filter or the leaderboard's, whichever this page has. On a page with
+// neither it goes to the board first, then focuses.
 function focusBoardSearch() {
-  const input = document.querySelector('#filter');
+  const input = document.querySelector('#filter, #lb-filter');
   if (input) { input.focus(); input.select(); return true; }
   return false;
 }

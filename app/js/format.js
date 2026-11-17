@@ -92,3 +92,22 @@ export function shortAddr(address) {
   const a = String(address ?? '');
   return a.length > 12 ? `${a.slice(0, 4)}…${a.slice(-4)}` : a;
 }
+
+// A stable hue for a category name, so every card and chip of one category
+// wears the same accent colour on every visit: a plain string hash folded
+// into 0–359. Purely presentational — the same name always gives the same
+// hue, with no state kept anywhere.
+export function hueFor(text) {
+  let hash = 0;
+  const s = String(text ?? '');
+  for (let i = 0; i < s.length; i += 1) hash = (hash * 31 + s.charCodeAt(i)) | 0;
+  return ((hash % 360) + 360) % 360;
+}
+
+// A share of a whole as a one-decimal percent, for the rewards bar legend:
+// 0.4 of the pot reads "40.0%".
+export function fmtShare(fraction) {
+  const n = Number(fraction);
+  if (!Number.isFinite(n)) return '—';
+  return `${(n * 100).toFixed(1)}%`;
+}

@@ -289,3 +289,152 @@ table.data tr.podium-3 td { background: #faeee3; }
   .card-stats { gap: 14px; }
   .card-stats dd { font-size: 17px; }
 }
+
+/* Round 3: category accents, saved bounties, urgency, the rewards bar, the
+   phase timeline, the related rail, leaderboard banding, profile pills,
+   richer prose and the accessibility pass. */
+
+/* Category accents: each card carries its category's hue as --cat-hue, set
+   inline from the name's hash, and wears it as a top edge and a chip dot. */
+.card { border-top: 3px solid hsl(var(--cat-hue, 300) 62% 62% / 0.6); }
+.chip-cat { display: inline-flex; align-items: center; gap: 6px; }
+.cat-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: hsl(var(--cat-hue, 300) 68% 46%);
+}
+.card-top-right { display: inline-flex; align-items: center; gap: 6px; }
+
+/* Saved bounties: the star on each card and the Saved tab. */
+.fav-btn {
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.fav-btn:hover { border-color: #e8a100; color: #e8a100; }
+.fav-btn.fav-on { color: #d98e00; border-color: #e8a100; background: #fdf6e0; }
+.tab-saved { margin-left: auto; }
+
+/* A countdown in its last day turns amber, on the board and the rail. */
+.chip-urgent { background: #fdf0d5; color: #8a5a00; }
+
+/* The rewards bar: how the pot splits across the paid places. */
+.rewards-bar { margin: 16px 0 6px; }
+.bar-track {
+  display: flex;
+  height: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f1eaf7;
+}
+.bar-seg { display: block; height: 100%; min-width: 2px; }
+.bar-legend { margin: 6px 0 0; font-size: 13.5px; }
+
+/* The phase timeline: dated milestones on one track, the stretch already
+   lived filled with the accent. Labels sit under their dots, centred, and
+   the track keeps side room so the first and last labels stay on the panel. */
+.timeline { position: relative; height: 84px; margin: 30px 70px 4px; }
+.tl-track {
+  position: absolute; top: 5px; left: 0; right: 0;
+  height: 6px; border-radius: 3px; background: #eee6f5;
+}
+.tl-fill { height: 100%; border-radius: 3px; background: var(--accent); }
+.tl-nodes { list-style: none; margin: 0; padding: 0; }
+.tl-node {
+  position: absolute; top: 0;
+  width: 140px; margin-left: -70px;
+  display: flex; flex-direction: column; align-items: center;
+  text-align: center;
+}
+.tl-dot {
+  width: 11px; height: 11px; border-radius: 50%;
+  background: var(--card); border: 3px solid #cdbfdd;
+}
+.node-done .tl-dot { background: var(--accent); border-color: var(--accent); }
+.node-close .tl-dot { background: #f9e7ea; border-color: var(--closed); }
+.tl-label { font-weight: 700; font-size: 13px; margin-top: 7px; line-height: 1.25; }
+.tl-date { color: var(--muted); font-size: 12px; line-height: 1.3; }
+
+/* The related rail: smaller cards under the bounty page. */
+.grid-mini { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+.mini-card h3 { font-size: 16px; margin-bottom: 10px; }
+.mini-card .card-stats dd { font-size: 16px; }
+
+/* Leaderboard: the prize strip and the band where the paid places end. */
+.prize-strip { background: #fffaf0; }
+table.data tr.band-row td {
+  background: #f4eff9;
+  color: var(--muted);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 7px 14px;
+}
+td.no-match { text-align: center; color: var(--muted); padding: 24px 14px; }
+
+/* Profile: placed pills beside the entries that placed. */
+.entry-main { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; }
+.placed-pill {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: #fdf3d7;
+  color: #6b4e00;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+/* Richer prose: quotes, rules and tables inside bounty descriptions. */
+.prose blockquote {
+  margin: 0 0 12px;
+  padding: 2px 14px;
+  border-left: 3px solid var(--accent);
+  color: var(--muted);
+}
+.prose blockquote p { margin: 6px 0; }
+.prose hr { border: 0; border-top: 1px solid var(--line); margin: 18px 0; }
+.prose .table-wrap { margin: 0 0 14px; }
+.prose del { color: var(--muted); }
+
+/* Accessibility and feel: a skip link, a clear focus ring on everything
+   interactive, a soft arrival for each view, and stillness for visitors
+   who ask their system for reduced motion. */
+.skip-link {
+  position: absolute;
+  left: -999px;
+  top: 0;
+  z-index: 20;
+  padding: 9px 14px;
+  border-radius: 0 0 10px 0;
+  background: var(--ink);
+  color: #ffffff;
+  font-weight: 700;
+}
+.skip-link:focus { left: 0; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+main > section { animation: view-in 0.18s ease-out; }
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+  main > section { animation: none; }
+  .card { transition: none; }
+}
+
+@media (max-width: 640px) {
+  .timeline { margin: 26px 40px 4px; height: 86px; }
+  .tl-node { width: 96px; margin-left: -48px; }
+  .tl-label { font-size: 12px; }
+  .tl-date { font-size: 11px; }
+  .tab-saved { margin-left: 0; }
+}
