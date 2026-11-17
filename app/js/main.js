@@ -52,3 +52,24 @@ async function route() {
 
 window.addEventListener('hashchange', route);
 route();
+
+// Pressing "/" anywhere jumps to the board search: on the board it focuses
+// the filter at once; elsewhere it goes to the board first, then focuses.
+function focusBoardSearch() {
+  const input = document.querySelector('#filter');
+  if (input) { input.focus(); input.select(); return true; }
+  return false;
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+  const target = event.target;
+  const typing = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA'
+    || target.tagName === 'SELECT' || target.isContentEditable);
+  if (typing) return;
+  event.preventDefault();
+  if (!focusBoardSearch()) {
+    location.hash = '#/';
+    setTimeout(focusBoardSearch, 350);
+  }
+});

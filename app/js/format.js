@@ -49,6 +49,31 @@ export function timeLeft(iso, now = Date.now()) {
   return { open: true, text: `${Math.max(minutes, 1)}m left` };
 }
 
+// A ticking countdown with seconds, for the board's live clocks: the text a
+// one-second timer writes into each card's clock without any refetch.
+export function countdownText(iso, now = Date.now()) {
+  const end = new Date(iso).getTime();
+  if (!Number.isFinite(end)) return 'No deadline';
+  const ms = end - now;
+  if (ms <= 0) return 'Entries closed';
+  const totalSeconds = Math.floor(ms / 1000);
+  const days = Math.floor(totalSeconds / 86400);
+  const hours = Math.floor((totalSeconds % 86400) / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n) => String(n).padStart(2, '0');
+  const clock = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+  return days > 0 ? `${days}d ${clock} left` : `${clock} left`;
+}
+
+// The board's status tabs, decided by deadline alone (see timeLeft):
+// open now, closing soon (inside 72 hours) or closed.
+export function bountyStatusTab(item, now = Date.now()) {
+  const end = new Date(item.deadline).getTime();
+  if (!Number.isFinite(end) || end <= now) return 'closed';
+  return end - now <= 72 * 3600 * 1000 ? 'soon' : 'open';
+}
+
 export function fmtBytes(bytes) {
   const n = Number(bytes);
   if (!Number.isFinite(n)) return '—';

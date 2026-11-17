@@ -22,7 +22,15 @@ export function getJSON(path) {
     const hit = cache.get(url);
     const headers = {};
     if (hit && hit.etag) headers['If-None-Match'] = hit.etag;
-    const res = await fetch(url, { headers });
+    let res;
+    try {
+      res = await fetch(url, { headers });
+    } catch (err) {
+      // A failed revalidation with a cached answer on hand serves the
+      // cached answer rather than breaking the view.
+      if (hit) return hit.data;
+      throw err;
+    }
     if (res.status === 304 && hit) return hit.data;
     if (!res.ok) throw new Error(`GET ${path} answered ${res.status}`);
     const data = await res.json();
@@ -34,19 +42,14 @@ export function getJSON(path) {
   return promise;
 }
 
-// The board list is one page today; follow next_cursor a few pages at most
-// so the board stays complete if the list ever grows past one page.
-export async function getCompetitions() {
-  const items = [];
-  let path = '/competitions?status=open';
-  for (let page = 0; page < 4 && path; page += 1) {
-    const data = await getJSON(path);
-    const batch = Array.isArray(data) ? data : (data.items ?? []);
-    items.push(...batch);
-    const cursor = data && !Array.isArray(data) ? data.next_cursor : null;
-    path = cursor ? `/competitions?status=open&cursor=${encodeURIComponent(cursor)}` : null;
-  }
-  return items;
+// One page of the board list, with the cursor the API hands back for the
+// next page (null when the list is complete). The board's "load more"
+// button follows it, so the first load fetches one page only.
+export async function getCompetitionsPage(cursor) {
+  const path = '/competitions?status=open' + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : '');
+  const data = await getJSON(path);
+  const items = Array.isArray(data) ? data : (data.items ?? []);
+  return { items, nextCursor: Array.isArray(data) ? null : (data.next_cursor ?? null) };
 }
 
 export function getCompetition(slug) {
